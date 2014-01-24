@@ -1,0 +1,102 @@
+<html>
+<head>
+	<title>Post it idea</title>
+	<script type="text/javascript" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+	<style type="text/css">
+	 .note { 
+	 	width: 150px; 
+	 	height: 150px; 
+	 	border: 5px solid black;
+	 	padding: 5px; 
+	 	display: inline-block;
+	 	background-color: white;
+	}
+	</style>
+</head>
+<body>
+	<button id="new">New Post It</button>
+	<button id="save">Save Attributes</button>
+	<label for"workspaces">Select Workspace:</label>
+	<select name="workspaces"></select>
+
+	<div id="wrapper"></div>
+
+	<script type="text/javascript">
+	var notes = {};
+
+	function drawNewNote() {
+		$("<div />").html("<p>This is a note</p>")
+					.addClass('note')
+					.appendTo('#wrapper')
+					.draggable()
+					.on('dblclick',editNote)
+	};
+
+	function drawExistingNote(left, top, content) {
+		$("<div />").html("<p>" + content +"</p>")
+					.addClass('note')
+					.appendTo('#wrapper')
+					.draggable()
+					.css({
+						left:left,
+						top:top,
+						position: "relative"
+					})
+					.on('dblclick',editNote)
+	};
+
+	function sendNote() {
+		var workspace_id = $('select').val();
+		$.ajax({
+			url: "processnotes.php?action=saveNotes",
+			type: "GET",
+			dataType: 'json',
+			data: {workspace_id: workspace_id, notes: notes},
+		})
+	}
+
+	function captureNotes() {
+		$('.note').each(function(index) {
+			notes[index] = {};
+			notes[index]["location"] = $(this).offset();
+			notes[index]["content"] = $(this).text();
+		});
+		sendNote();
+	};
+
+	function editNote() {
+		var newContent = prompt("New Note Text");
+		$(this).html("<p>" + newContent + "</p>");
+	};
+
+	function populateWorkspace(id, name) {
+		$('<option />').html(name)
+					   .attr('value',id)
+					   .appendTo('select')
+	}
+
+	function getWorkspaces() {
+		$.ajax({
+			url: "processnotes.php?action=getWorkspaces",
+			type: "GET",
+			dataType: 'json',
+			success: function(data) {
+				for (var i = 0; i < data.length; i++) {
+					populateWorkspace(data[i]['id'], data[i]['workspace_name']);
+				};
+			}
+		})
+	}
+
+	$(function() {
+		getWorkspaces();
+		$('#new').on('click', drawNewNote);
+		$('#set').on('click', captureNotes);
+	})
+
+	</script>
+</body>
+</html>
+
+<option value="1">Label</option>

@@ -16,7 +16,7 @@
 </head>
 <body>
 	<button id="new">New Post It</button>
-	<button id="save">Save Attributes</button>
+	<button id="save">Save Workspace</button>
 	<label for"workspaces">Select Workspace:</label>
 	<select name="workspaces"></select>
 
@@ -26,12 +26,31 @@
 	var notes = {};
 
 	function drawNewNote() {
-		$("<div />").html("<p>This is a note</p>")
+		$('<div />').html('<p>This is a note</p>')
 					.addClass('note')
 					.appendTo('#wrapper')
 					.draggable()
 					.on('dblclick',editNote)
 	};
+
+	function getNotes() {
+		var workspace_id = $('select').val();
+		$('#wrapper').html('');
+		$.ajax({
+			url: "processnotes.php?action=getNotes",
+			type: "GET",
+			dataType: 'json',
+			data: {workspace_id: workspace_id},
+			success: function(data) {
+				for (var i = 0; i < data.length; i++) {	
+					var content = data[i]['content'];
+					var left = data[i]['location']['left'];
+					var top = data[i]['location']['top'];
+					drawExistingNote(left, top, content);
+				};
+			}
+		})
+	}
 
 	function drawExistingNote(left, top, content) {
 		$("<div />").html("<p>" + content +"</p>")
@@ -61,8 +80,13 @@
 			notes[index] = {};
 			notes[index]["location"] = $(this).offset();
 			notes[index]["content"] = $(this).text();
+			console.log("note says:")
+			console.log($(this).text())
+			console.log("css says:")
+			console.log($(this).attr('style'))
 		});
 		sendNote();
+		notes = {};
 	};
 
 	function editNote() {
@@ -91,8 +115,10 @@
 
 	$(function() {
 		getWorkspaces();
+		getNotes();
 		$('#new').on('click', drawNewNote);
-		$('#set').on('click', captureNotes);
+		$('#save').on('click', captureNotes);
+		$('select').change(getNotes);
 	})
 
 	</script>

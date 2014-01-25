@@ -5,13 +5,10 @@ session_start();
 
 function getNotes($conn, $workspace)
 {
-	$query = "SELECT * FROM notes WHERE id =".$workspace;
+	$query = "SELECT notes_content FROM notes WHERE id =".$workspace;
 	$result = mysqli_query($conn, $query);
-	$notes = array();
-	while ($row = mysqli_fetch_assoc($result)) {
-		$notes[] = $row;
-	}
-	return $notes;
+	$notes = mysqli_fetch_row($result);
+	return $notes[0];
 }
 
 function saveNotes($conn, $workspace, $data) 
@@ -45,7 +42,7 @@ switch ($_GET['action']) {
         saveNotes($conn, $_GET['workspace_id'], json_encode($_GET['notes']));
         break;
     case "getNotes":
-        echo json_encode(getNotes($conn, $_GET['workspace_id']));
+        echo getNotes($conn, $_GET['workspace_id']);
         break;
 }
 ?>

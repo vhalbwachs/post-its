@@ -17,10 +17,13 @@ function saveNotes($conn, $workspace, $data)
 	$result = mysqli_query($conn, $query);
 }
 
-// function createWorkspace($name) 
-// {
-// 	$query = "INSERT INTO notes (workspace) VALUES (".$name.")";
-// }
+function createWorkspace($conn, $name) 
+{
+	$query = "INSERT INTO notes (workspace_name) VALUES ('".$name."')";
+	mysqli_query($conn, $query);
+	$new_workspace_id = mysqli_insert_id($conn);
+	return $new_workspace_id;
+}
 
 function getWorkspaces($conn) 
 {
@@ -33,16 +36,27 @@ function getWorkspaces($conn)
 	return $workspaces;
 }
 
+function deleteWorkspace($conn, $workspace_id) {
+	$query = "DELETE FROM notes where id =".$workspace_id;
+	mysqli_query($conn, $query);
+}
+
 
 switch ($_GET['action']) {
     case "getWorkspaces":
         echo json_encode(getWorkspaces($conn));
         break;
     case "saveNotes":
-        saveNotes($conn, $_GET['workspace_id'], json_encode($_GET['notes']));
+        saveNotes($conn, $_GET['workspace_id'], $_GET['html']);
         break;
     case "getNotes":
         echo getNotes($conn, $_GET['workspace_id']);
         break;
+    case "createWorkspace":
+    	echo createWorkspace($conn, $_GET['name']);
+    	break;
+    case "deleteWorkspace":
+    	deleteWorkspace($conn, $_GET['workspace_id']);
+
 }
 ?>

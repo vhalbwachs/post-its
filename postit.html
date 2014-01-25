@@ -15,15 +15,17 @@
 	</style>
 </head>
 <body>
-	<button id="new">New Post It</button>
-	<button id="save">Save Workspace</button>
 	<label for"workspaces">Select Workspace:</label>
-	<select name="workspaces"></select>
-
-	<div id="wrapper"></div>
+	<select name="workspaces" id="workspaces"></select>
+	<button id="new-workspace">New Workspace</button>
+	<button id="delete-workspace">Delete Current Workspace</button>
+	<button id="new-post">New Post It</button>
+	
+	
+	<div id="wrapper">
+	</div>
 
 	<script type="text/javascript">
-	var notes = {};
 
 	function drawNewNote() {
 		$('<div />').html('<p>This is a note</p>')
@@ -31,63 +33,42 @@
 					.appendTo('#wrapper')
 					.draggable()
 					.on('dblclick',editNote)
+					.on('dragstop', sendNotes);
+		sendNotes();
+	};
+
+	function prepDrawnNotes() {
+		$('.note').draggable()
+				 .on('dblclick',editNote)
+				 .on('dragstop', sendNotes);
 	};
 
 	function getNotes() {
 		var workspace_id = $('select').val();
-		$('#wrapper').html('');
+		$('#wrapper').empty();
 		$.ajax({
 			url: "processnotes.php?action=getNotes",
 			type: "GET",
-			dataType: 'json',
+			dataType: 'html',
 			data: {workspace_id: workspace_id},
 			success: function(data) {
-				for (var i = 0; i < data.length; i++) {	
-					var content = data[i]['content'];
-					var left = data[i]['location']['left'];
-					var top = data[i]['location']['top'];
-					drawExistingNote(left, top, content);
-				};
+				$('#wrapper').html(data);
+				prepDrawnNotes();
 			}
 		})
 	}
 
-	function drawExistingNote(left, top, content) {
-		$("<div />").html("<p>" + content +"</p>")
-					.addClass('note')
-					.appendTo('#wrapper')
-					.draggable()
-					.css({
-						left:left,
-						top:top,
-						position: "relative"
-					})
-					.on('dblclick',editNote)
-	};
 
-	function sendNote() {
+	function sendNotes() {
 		var workspace_id = $('select').val();
+		var html_content = $('#wrapper').html();
 		$.ajax({
 			url: "processnotes.php?action=saveNotes",
 			type: "GET",
-			dataType: 'json',
-			data: {workspace_id: workspace_id, notes: notes},
+			dataType: 'text',
+			data: {workspace_id: workspace_id, html: html_content},
 		})
 	}
-
-	function captureNotes() {
-		$('.note').each(function(index) {
-			notes[index] = {};
-			notes[index]["location"] = $(this).offset();
-			notes[index]["content"] = $(this).text();
-			console.log("note says:")
-			console.log($(this).text())
-			console.log("css says:")
-			console.log($(this).attr('style'))
-		});
-		sendNote();
-		notes = {};
-	};
 
 	function editNote() {
 		var newContent = prompt("New Note Text");
@@ -113,16 +94,45 @@
 		})
 	}
 
+	function createWorkspace() {
+		var name = prompt("Workspace Name");
+		if (name == null) {
+			$.ajax({
+				url: "processnotes.php?action=createWorkspace",
+				type: "GET",
+				dataType: 'json',
+				data: {name: name},
+				success: function(id) {
+					populateWorkspace(id,name);
+					$('select').val(id);
+				}
+			})
+		} else {
+			alert("name cannot be blank");
+		}
+	}
+
+	function deleteWorkspace() {
+		var workspace_id = $('select').val();
+		$.ajax({
+			url: "processnotes.php?action=deleteWorkspace",
+			type: "GET",
+			data: {workspace_id: workspace_id},
+			success: function() {
+				$("#workspaces option:selected").remove();			
+			}
+		})		
+	}
+
 	$(function() {
 		getWorkspaces();
-		getNotes();
-		$('#new').on('click', drawNewNote);
-		$('#save').on('click', captureNotes);
+		$('#new-post').on('click', drawNewNote);
+		$('#new-workspace').on('click', createWorkspace);
+		$('#delete-workspace').on('click', deleteWorkspace);
 		$('select').change(getNotes);
+		getNotes();
 	})
 
 	</script>
 </body>
 </html>
-
-<option value="1">Label</option>
